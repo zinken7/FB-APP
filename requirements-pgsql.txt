@@ -1,0 +1,15 @@
+flask
+flask_login
+flask_migrate
+flask_wtf
+email_validator
+flask_sqlalchemy
+python-decouple
+python-dotenv
+gunicorn
+psycopg2
+requests
+requests_toolbelt
+unidecode
+redis
+Flask-Caching

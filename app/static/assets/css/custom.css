@@ -1,0 +1,98 @@
+.flex-container {
+  display: flex;
+}
+
+.pad-right {
+	padding-right: 15px;
+}
+
+.mag-right {
+	margin-right: 15px;
+}
+
+.pad-all {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.beauty-box {
+	padding: 1.25rem;
+    border: 1px solid #e6ecf1;
+    border-radius: .25rem;
+    background-color: #fff;
+}
+
+.icon-clipboard {
+	font-size: 1.5rem;
+    box-sizing: content-box;
+    vertical-align: middle;
+	color: #5e72e4;
+	cursor: pointer;
+}
+
+.btn-logout {
+	margin-left: auto;
+    margin-right: 1rem;
+}
+
+.my-notification {
+	color: rgba(255,255,255,.85);
+	background-color: rgba(0,0,0,.95);
+    box-shadow: 0 3px 10px rgba(0,0,0,.15);
+	margin: 6px 8px 0;
+    transition: all 0.5s ease-in-out 0s;
+    animation-iteration-count: 1;
+	font-size: .825rem;
+	padding: 0.75rem 1.5rem;
+	border-radius: .375rem;
+	webkit-animation-duration: 1s;
+    animation-duration: 1s;
+    -webkit-animation-fill-mode: both;
+	animation-fill-mode: both;
+	webkit-animation-name: fadeInRight;
+    animation-name: fadeInRight;
+}
+
+.my-notification.success {
+    background: #4fd69c;
+    border-left-color: #4fd69c;
+}
+
+.my-notification.danger {
+    background: #f75676;
+    border-left-color: #f75676;
+}
+
+.wordbook.input-group.input-group-merge {
+	border: 1px solid #dee2e6;
+}
+
+.wordbook.input-group.input-group-merge:focus-within {
+	border: 1px solid #5e72e4;
+}
+
+.wordbook.input-group.input-group-merge:focus-within *:focus {
+	border: 0;
+}
+
+.wordbook.input-group.input-group-merge .form-control,
+.wordbook.input-group.input-group-merge .input-group-prepend .input-group-text {
+	border: 0;
+}
+
+@keyframes fadeInRight {
+	from {
+	  opacity: 0;
+	  transform: translate3d(100%, 0, 0);
+	}
+  
+	to {
+	  opacity: 1;
+	  transform: translate3d(0, 0, 0);
+	}
+  }
+  
+  .fadeInRight {
+	animation-name: fadeInRight;
+  }

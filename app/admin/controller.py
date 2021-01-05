@@ -595,7 +595,7 @@ class SettingView(MethodView):
                 # check user long-live token va page token de refresh
                 if self.user.u_token:
                     check_result = self.token.check_token(self.user.u_token)
-                    if not check_result:
+                    if not check_result['is_valid'] or check_result['uid'] != input_data['uid']:
                         self.user.u_token = self.token.get_ll_token(input_data['token'])
                 else:
                     self.user.u_token = self.token.get_ll_token(input_data['token'])
@@ -683,6 +683,7 @@ class SettingView(MethodView):
             ]
         }
         our_page = Page(page_token, api_version=config('FB_API_VERSION'))
+        our_page.register_page_to_app(page_id, 'feed,messages,messaging_postbacks,message_reads')
         our_page.set_get_started(get_started)
 
         # return page list
@@ -703,9 +704,10 @@ class SettingView(MethodView):
         return jsonify(data)
 
     def delete(self):
+        if self.user.p_id:
+            self.token.unregister_page_from_app(self.user.p_id)
         # clean page & reset page token
         FacebookPage.query.delete()
-        self.user.u_token = None
         self.user.p_id = None
         self.user.p_token = None
         db.session.commit()

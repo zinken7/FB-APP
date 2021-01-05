@@ -27,10 +27,8 @@ class ReceiveWebhook(MethodView):
 
     def __init__(self):
         self.master = FacebookUser.query.first()
-        self.bot = Bot(self.master.p_token,
-                       api_version=config('FB_API_VERSION'))
-        self.page = Page(self.master.p_token,
-                         api_version=config('FB_API_VERSION'))
+        self.bot = Bot(self.master.p_token, app_secret=self.master.app_secret, api_version=config('FB_API_VERSION'))
+        self.page = Page(self.master.p_token, app_secret=self.master.app_secret, api_version=config('FB_API_VERSION'))
         self.VERIFY_TOKEN = self.master.verify_token
         self.welcome, self.limitdict, self.unlimitdict, self.wordbooks, self.comment, self.buttons, self.quickreplies = get_res_data()
         get_customer()
@@ -130,13 +128,15 @@ def reply_comment(page, comment_id, sender_id, sender_name, welcome, comment):
     # like
     page.page_like_comment(comment_id)
     # reply comment
-    cmt_text = random.choice(comment)
-    if '@@' in cmt_text:
-        get_cmt_arr = cmt_text.split("@@")
-        reply_cmt = get_cmt_arr[0]+sender_name+get_cmt_arr[1]
-    else:
-        reply_cmt = cmt_text
-    page.page_reply_comment(comment_id, reply_cmt)
+    if cache.get("ssreply") is None or not cache.get("ssreply"):
+        cmt_text = random.choice(comment)
+        if '@@' in cmt_text:
+            get_cmt_arr = cmt_text.split("@@")
+            reply_cmt = get_cmt_arr[0]+sender_name+get_cmt_arr[1]
+        else:
+            reply_cmt = cmt_text
+        page.page_reply_comment(comment_id, reply_cmt)
+        cache.set("ssreply", True, timeout=60)
     # hide
     page.page_hide_comment(comment_id)
     # reply private
@@ -217,10 +217,10 @@ def send_data(bot, sender_id, choice, text, buttons, quickreplies):
             bot.send_action(sender_id, "typing_on")
             continue
         if item['stype'] == 'button':
-            bot.send_button_message(sender_id, buttons[msg_content]['text'], buttons[msg_content]['buttons'])
+            bot.send_button_message(sender_id, item['stext'], buttons[msg_content]['buttons'])
             continue
         if item['stype'] == 'quickreplies':
-            bot.send_quick_replies_message(sender_id, quickreplies[msg_content]['text'], quickreplies[msg_content]['quick_replies'])
+            bot.send_quick_replies_message(sender_id, item['stext'], quickreplies[msg_content]['quick_replies'])
             continue
 
 # Check block to response
@@ -253,8 +253,15 @@ def get_res_data():
     wordbook_list = {}
     for book in books_json:
         wordbook_list[book['name']] = book['content']
-
-
+    for items in wordbook_list.values():
+        i = 0
+        while i < len(items):
+            if items[i]['stype'] == 'quickreplies' or items[i]['stype'] == 'button':
+                items[i]['stext'] = items[i-1]['scontent']
+                # xoa gi tri truoc
+                i-=1
+                del items[i]
+            i+=1
     conn = db_connect()
     cursor = conn.cursor()
 

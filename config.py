@@ -17,7 +17,7 @@ class Config(object):
     DOWNLOAD_FILE = join(dirname(realpath(__file__)), 'app/static/downloads')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    SERVER_NAME = 'ecdef2aa2dfb.ngrok.io'
+    SERVER_NAME = 'a9ef788853fc.ngrok.io'
 
 class ProductionConfig(Config):
     DEBUG = False

@@ -185,3 +185,15 @@ class Page:
             )
             result = response.json()
             return result
+
+
+    def register_page_to_app(self, page_id, fields):
+        request_endpoint = '{0}/{1}/subscribed_apps'.format(self.graph_url, page_id)
+        pm_obj = {"subscribed_fields": fields}
+        response = requests.post(
+            request_endpoint,
+            params = self.auth_args,
+            json = pm_obj
+        )
+        result = response.json()
+        return result

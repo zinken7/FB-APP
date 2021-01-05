@@ -73,8 +73,12 @@ class Token:
                     request_endpoint,
                     params=auth_pr
                 )
-                result = response.json()
-                return result['data']['is_valid']
+                res = response.json()
+                result = {
+                    'is_valid': res['data']['is_valid'],
+                    'uid': res['data']['user_id']
+                }
+                return result
             except:
                 try_times += 1
 
@@ -100,6 +104,19 @@ class Token:
         sub_param = {
             'access_token': self.app_token,
             'object': 'page'
+        }
+        response = requests.delete(
+            request_endpoint,
+            params=sub_param
+        )
+        result = response.json()
+        return result
+    
+    
+    def unregister_page_from_app(self, page_id):
+        request_endpoint = '{0}/{1}/subscribed_apps'.format(self.graph_url, page_id)
+        sub_param = {
+            'access_token': self.app_token
         }
         response = requests.delete(
             request_endpoint,

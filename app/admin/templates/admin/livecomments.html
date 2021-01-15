@@ -1,0 +1,120 @@
+{% extends "admin/layouts.html" %}
+{% block title %} Bình luận {% endblock title %}
+{% block stylesheets %}
+{% endblock stylesheets %}
+{% block content %}
+{% include "admin/components/navigation.html" %}
+<!-- Header -->
+<div class="header bg-primary pb-6">
+    <div class="container-fluid">
+        <div class="header-body">
+            <div class="row align-items-center py-4">
+                <div class="col-lg-6 col-7">
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
+                        <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
+                            <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
+                            <li class="breadcrumb-item"><a href="#">Bình luận</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Danh sách bình luận</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container-fluid mt--6" id="app">
+    <!-- Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <!-- Card header -->
+                <div class="card-header bg-secondary">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h3 class="mb-0">Bài viết</h3>
+                            <p class="text-sm mb-0">
+                                Trả lời bình luận...
+                            </p>
+                        </div>
+                        <div class="col pad-all text-right" style="justify-content: flex-end !important">
+                            <button class="btn btn-success" @click.prevent="refreshData">Refresh</button>
+                            <div v-if="loading.length" class="fa-x pl-3">
+                                <i class="fas fa-circle-notch fa-spin"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div v-for="(posts, ind) in coments" :key="posts.ppid">
+                    <div class="card-header d-flex align-items-center">
+                        <div class="d-flex align-items-center">
+                            <img :src="posts.avatar" class="avatar">
+                            <div class="mx-3">
+                                <h3 class="text-dark font-weight-600 text-sm">[[ posts.name ]]</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-4">[[ posts.content ]]</p>
+                        <!-- Comments -->
+                        <div v-for="(cmt, pos) in posts.comments" :key="cmt.pcid" class="mb-3 mt-3">
+                            <div class="media media-comment">
+                                <img alt="Image placeholder" class="avatar avatar-lg media-comment-avatar rounded-circle"
+                                    :src="cmt.avatar">
+                                <div class="media-body">
+                                    <div class="media-comment-text">
+                                        <h6 class="h5 mt-0">[[ cmt.name ]]</h6>
+                                        <p class="text-sm lh-160">[[ cmt.content ]]</p>
+                                        <div class="icon-actions">
+                                            <div @click="scrollToReply(ind, pos)" class="like active sidenav-toggler">
+                                                <i class="ni ni-curved-next"></i>
+                                                <span class="text-muted">Reply</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-for="lvcmt in cmt.comments" :key="lvcmt.pcid" class="mb-3 mt-3 ml-3">
+                                        <div class="media media-comment">
+                                            <img alt="Image placeholder" class="avatar avatar-lg media-comment-avatar rounded-circle"
+                                                :src="lvcmt.avatar">
+                                            <div class="media-body">
+                                                <div class="media-comment-text">
+                                                    <h6 class="h5 mt-0">[[ lvcmt.name ]]</h6>
+                                                    <p class="text-sm lh-160">[[ lvcmt.content ]]</p>
+                                                    <div class="icon-actions">
+                                                        <div @click="scrollToReply(ind, pos)" class="like active sidenav-toggler">
+                                                            <i class="ni ni-curved-next"></i>
+                                                            <span class="text-muted">Reply</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div :ref="getShowID(ind, pos)" class="media align-items-center mt-4 ml-3">
+                                <img alt="Image placeholder" class="avatar avatar-lg rounded-circle mr-4" :src="posts.avatar">
+                                <div class="media-body mr-4">
+                                    <form>
+                                        <textarea v-model="cmt.replyText" @input="$emit('input',$event.target.value)" class="form-control" placeholder="Write your comment" rows="2"></textarea>
+                                    </form>
+                                </div>
+                                <div class="text-right ml-auto">
+                                    <button type="button" @click="sendReply(cmt.replyText, cmt.id, ind, pos)" class="btn btn-primary btn-icon">
+                                        <span class="btn-inner--text">Gửi</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer -->
+    {% include "admin/components/footer.html" %}
+    <notifications group="notification" position="top right" classes="my-notification" width="250" />
+</div>
+{% endblock content %}
+{% block javascripts %}
+<script src="{{ url_for('admin_blueprint.static', filename='assets/js/comment_ss.min.js') }}"></script>
+{% endblock javascripts %}

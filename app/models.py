@@ -5,7 +5,7 @@ Copyright (c) 2020 -zinken7
 """
 
 from flask_login import UserMixin
-from sqlalchemy import Binary, Column, Integer, String, Float, JSON, Boolean
+from sqlalchemy import Binary, Column, Integer, String, Float, JSON, Boolean, ForeignKey
 
 from app import db, login_manager
 
@@ -222,6 +222,73 @@ class FacebookPage(db.Model, UserMixin):
         self.avatar = avatar
         self.name = name
         self.selected = selected
+
+    def __repr__(self):
+        return str(self.id)
+
+class Posts(db.Model):
+
+    __tablename__ = 'posts_page'
+
+    id = Column(Integer, primary_key=True)
+    ppid = Column(String, unique=True, nullable=False)
+    avatar = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    content = Column(String, nullable=True)
+    comments = db.relationship('Comments', backref='post_id', lazy='dynamic')
+
+    def __init__(self, ppid, avatar, name, content):
+        self.ppid = ppid
+        self.avatar = avatar
+        self.name = name
+        self.content = content
+
+    def __repr__(self):
+        return str(self.id)
+
+class Comments(db.Model):
+
+    __tablename__ = 'comments_post'
+
+    id = Column(Integer, primary_key=True)
+    pcid = Column(String, unique=True, nullable=True)
+    uid = Column(String, nullable=True)
+    avatar = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    content = Column(String, nullable=True)
+    page_post_id = Column(String, ForeignKey('posts_page.ppid'), nullable=False)
+    comments = db.relationship('Lv2Comments', backref='cmt_id', lazy='dynamic')
+
+    def __init__(self, pcid, uid, avatar, name, content, page_post_id):
+        self.pcid = pcid
+        self.uid = uid
+        self.avatar = avatar
+        self.name = name
+        self.content = content
+        self.page_post_id = page_post_id
+
+    def __repr__(self):
+        return str(self.id)
+
+class Lv2Comments(db.Model):
+
+    __tablename__ = 'comments_comment'
+
+    id = Column(Integer, primary_key=True)
+    pcid = Column(String, unique=True, nullable=True)
+    uid = Column(String, nullable=True)
+    avatar = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    content = Column(String, nullable=True)
+    comment_post_id = Column(String, ForeignKey('comments_post.pcid'), nullable=False)
+
+    def __init__(self, pcid, uid, avatar, name, content, comment_post_id):
+        self.pcid = pcid
+        self.uid = uid
+        self.avatar = avatar
+        self.name = name
+        self.content = content
+        self.comment_post_id = comment_post_id
 
     def __repr__(self):
         return str(self.id)

@@ -9,7 +9,7 @@ from flask import render_template, request, jsonify, abort, send_file, url_for
 from flask.views import MethodView
 from app import db, cache
 
-from app.models import Customer, Asset, Keyword, Wordbook, ButtonData, QuickReplies, Welcome, CommentData, FacebookUser, FacebookPage, PersistentMenu
+from app.models import Customer, Asset, Keyword, Wordbook, ButtonData, QuickReplies, Welcome, CommentData, Posts, Comments, Lv2Comments, FacebookUser, FacebookPage, PersistentMenu
 from app.pypage.token import Token
 from app.pymessenger.page import Page
 
@@ -444,6 +444,105 @@ class CommentDataView(MethodView):
         else:
             return jsonify(title="Fail! ", message="Load lại trang và thử lại..", status="danger")
 
+
+# Live Comment Reply
+class LiveCommentView(MethodView):
+
+    def __init__(self):
+        self.cmt_data = []
+        self.posts = Posts.query.all()
+
+    def get(self, id):
+        if id:
+            self.cmt_data = self.get_val_db(self.posts)
+
+            return jsonify(self.cmt_data)
+        return render_template('admin/livecomments.html')
+
+    def post(self, id):
+        user = FacebookUser.query.first()
+        page = Page(user.p_token,app_secret=user.app_secret, api_version=config('FB_API_VERSION'))
+        if id:
+            comment = Comments.query.filter_by(id=id).first()
+            if comment:
+                input_d = request.get_json()
+                if input_d['data']:
+                    r = page.page_reply_comment(comment.pcid, input_d['data'])
+                    res_id = r.get("id")
+                    if res_id:
+                        # add to database
+                        _post = comment.post_id.id
+                        _page = Posts.query.get(_post)
+                        new_cmt = Lv2Comments(res_id,user.p_id,_page.avatar,_page.name,input_d['data'],comment.pcid)
+                        db.session.add(new_cmt)
+                        db.session.commit()
+                        # return cmt_data list
+                        self.cmt_data = self.get_val_db(self.posts)
+
+                        return jsonify(data=self.cmt_data, title="Success! ", message="Gửi bình luận thành công", status="success")
+                    else:
+                        return jsonify(title="Fail! ", message="Bình luận không tồn tại hoặc đã bị xóa", status="danger")
+                else:
+                    return jsonify(title="Fail! ", message="Bình luận không hợp lệ", status="danger")
+            else:
+                return jsonify(title="Fail! ", message="Bình luận không tồn tại hoặc đã bị xóa", status="danger")
+        else:
+            Lv2Comments.query.delete()
+            Comments.query.delete()
+            Posts.query.delete()
+            db.session.commit()
+            posts = page.get_all_posts(user.p_id)
+            get_content_from_page(page, posts, user.p_id)
+            self.posts = Posts.query.all()
+            self.cmt_data = self.get_val_db(self.posts)
+
+            return jsonify(self.cmt_data)
+
+    def get_val_db(self, posts):
+        objects_list = []
+        for post in posts:
+            post_content = {
+                'id': post.id,
+                'ppid': post.ppid,
+                'avatar': post.avatar,
+                'name': post.name,
+                'content': post.content,
+                'comments': []
+            }
+            lv0_comments = post.comments.all()
+            _lv0_comments = []
+            if lv0_comments:
+                for lv0_comment in lv0_comments:
+                    lv0_comment_content = {
+                        'id': lv0_comment.id,
+                        'pcid': lv0_comment.pcid,
+                        'uid': lv0_comment.uid,
+                        'avatar': lv0_comment.avatar,
+                        'name': lv0_comment.name,
+                        'content': lv0_comment.content,
+                        'comments': []
+                    }
+                    lv1_comments = lv0_comment.comments.all()
+                    _lv1_comments = []
+                    if lv1_comments:
+                        for lv1_comment in lv1_comments:
+                            lv1_comment_content = {
+                                'id': lv1_comment.id,
+                                'pcid': lv1_comment.pcid,
+                                'uid': lv1_comment.uid,
+                                'avatar': lv1_comment.avatar,
+                                'name': lv1_comment.name,
+                                'content': lv1_comment.content
+                            }
+                            _lv1_comments.append(lv1_comment_content)
+                        lv0_comment_content['comments'] = _lv1_comments
+                    _lv0_comments.append(lv0_comment_content)
+            post_content['comments'] = _lv0_comments
+            objects_list.append(post_content)
+        
+        return objects_list
+
+
 # Persistent Menu
 class PersistentMenuView(MethodView):
 
@@ -682,9 +781,11 @@ class SettingView(MethodView):
                 }
             ]
         }
-        our_page = Page(page_token, api_version=config('FB_API_VERSION'))
+        our_page = Page(page_token,app_secret=self.user.app_secret, api_version=config('FB_API_VERSION'))
         our_page.register_page_to_app(page_id, 'feed,messages,messaging_postbacks,message_reads')
         our_page.set_get_started(get_started)
+        posts = our_page.get_all_posts(page_id)
+        get_content_from_page(our_page, posts, page_id)
 
         # return page list
         conn = db_connect()
@@ -708,6 +809,9 @@ class SettingView(MethodView):
             self.token.unregister_page_from_app(self.user.p_id)
         # clean page & reset page token
         FacebookPage.query.delete()
+        Lv2Comments.query.delete()
+        Comments.query.delete()
+        Posts.query.delete()
         self.user.p_id = None
         self.user.p_token = None
         db.session.commit()
@@ -784,3 +888,30 @@ def db_connect():
 # Allow files
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Get content from Page
+def get_content_from_page(our_page, posts, page_id):
+    page_choose = FacebookPage.query.filter_by(uid=page_id).first()
+    if posts["data"]:
+        for post in posts["data"]:
+            # save post
+            post_content = post["message"] if post["message"] else "No content"
+            add_post = Posts(post["id"], page_choose.avatar, page_choose.name, post_content)
+            db.session.add(add_post)
+            db.session.commit()
+            comments = our_page.get_all_comments(post["id"])
+            if comments["data"]:
+                for comment in comments["data"]:
+                    # save comment
+                    add_cmt = Comments(comment["id"], comment["from"].get("id"), comment["from"]["picture"]["data"].get(
+                        "url"), comment["from"].get("name"), comment["message"], post["id"])
+                    db.session.add(add_cmt)
+                    db.session.commit()
+                    if comment.get("comments"):
+                        # save lv2 comment
+                        lv2_cmts = comment["comments"]["data"]
+                        for lv2_cmt in lv2_cmts:
+                            add_lv2_cmt = Lv2Comments(lv2_cmt["id"], lv2_cmt["from"].get("id"), lv2_cmt["from"]["picture"]["data"].get(
+                            "url"), lv2_cmt["from"].get("name"), lv2_cmt["message"], comment["id"])
+                            db.session.add(add_lv2_cmt)
+                            db.session.commit()

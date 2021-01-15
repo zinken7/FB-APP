@@ -197,3 +197,24 @@ class Page:
         )
         result = response.json()
         return result
+
+    def get_all_posts(self, page_id):
+        request_endpoint = '{0}/{1}/feed'.format(self.graph_url, page_id)
+        response = requests.get(
+            request_endpoint,
+            params = self.auth_args
+        )
+        result = response.json()
+        return result
+
+
+    def get_all_comments(self, page_post_id):
+        request_endpoint = '{0}/{1}/comments'.format(self.graph_url, page_post_id)
+        pm_obj = {'fields': 'message,id,from{name,picture.height(999){url}},comments{message,id,from{name,picture.height(999){url}}}'}
+        auth_params = {**pm_obj,**self.auth_args}
+        response = requests.get(
+            request_endpoint,
+            params = auth_params
+        )
+        result = response.json()
+        return result

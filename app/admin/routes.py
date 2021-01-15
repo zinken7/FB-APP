@@ -7,7 +7,7 @@ Copyright (c) 2020 -zinken7
 from app.admin import blueprint
 from flask import render_template
 
-from app.admin.controller import IndexView, CustomerView, WelcomeView, KeywordView, WordbookView, ButtonView, QuickRepliesView, AssetsView, CommentDataView, PersistentMenuView, SettingView, UploadView, DownloadView
+from app.admin.controller import IndexView, CustomerView, WelcomeView, KeywordView, WordbookView, ButtonView, QuickRepliesView, AssetsView, CommentDataView, LiveCommentView, PersistentMenuView, SettingView, UploadView, DownloadView
 
 
 ## Main function
@@ -57,6 +57,11 @@ blueprint.add_url_rule('/assets/<id>', methods=['GET', 'DELETE'], view_func=asse
 comment_view = CommentDataView.as_view('comments')
 blueprint.add_url_rule('/comments', methods=['GET', 'POST'], defaults={'id' : None}, view_func=comment_view)
 blueprint.add_url_rule('/comments/<id>', methods=['GET', 'POST', 'DELETE'], view_func=comment_view)
+
+# Live Comment View
+livecomment_view = LiveCommentView.as_view('live-comments')
+blueprint.add_url_rule('/live-comments', methods=['GET', 'POST'], defaults={'id' : None}, view_func=livecomment_view)
+blueprint.add_url_rule('/live-comments/<id>', methods=['GET', 'POST'], view_func=livecomment_view)
 
 # PersistentMenu View
 persistentmenu_view = PersistentMenuView.as_view('persistent-menu')

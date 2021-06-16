@@ -9,7 +9,7 @@ from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_caching import Cache
 from importlib import import_module
-from logging import basicConfig, DEBUG, getLogger, StreamHandler
+from logging import basicConfig, ERROR, getLogger, StreamHandler
 from os import path
 from decouple import config
 
@@ -46,7 +46,7 @@ def configure_database(app):
 def configure_logs(app):
     # soft logging
     try:
-        basicConfig(filename='error.log', level=DEBUG)
+        basicConfig(filename='error.log', level=ERROR, format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
         logger = getLogger()
         logger.addHandler(StreamHandler())
     except:
